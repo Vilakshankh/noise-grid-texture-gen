@@ -13,9 +13,13 @@
     intensityValue: document.getElementById("intensity-value"),
     gridSize: document.getElementById("grid-size"),
     gridSizeValue: document.getElementById("grid-size-value"),
+    gap: document.getElementById("gap"),
+    gapValue: document.getElementById("gap-value"),
+    gapControl: document.getElementById("gap-control"),
     opacity: document.getElementById("opacity"),
     opacityValue: document.getElementById("opacity-value"),
     colorOptions: document.getElementById("color-options"),
+    hex: document.getElementById("hex"),
     regenerate: document.getElementById("regenerate"),
     export: document.getElementById("export"),
     exportSvg: document.getElementById("export-svg"),
@@ -33,8 +37,10 @@
     scale: 120,
     intensity: 1.5,
     gridSize: 24,
+    gap: 4,
     opacity: 1,
     color: "white",
+    customGrid: null,
     seed: Math.floor(Math.random() * 0xffffffff),
   };
 
@@ -235,9 +241,29 @@
 
   // --- Grid rendering (pass 2) ---
 
-  // Gap between squares so adjacent cells read as a mosaic, not a solid wash
+  // Accepts #rgb or #rrggbb, with or without the hash
+  function parseHex(text) {
+    const m = text.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (!m) return null;
+    let h = m[1];
+    if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  }
+
+  // Resolves the active grid/background pair; custom hex colors get a
+  // light or dark background based on the grid color's luminance
+  function currentColors() {
+    if (state.color === "custom" && state.customGrid) {
+      const g = state.customGrid;
+      const lum = 0.2126 * g[0] + 0.7152 * g[1] + 0.0722 * g[2];
+      return { grid: g, bg: lum < 128 ? [236, 236, 236] : [10, 10, 10] };
+    }
+    return COLORS[state.color];
+  }
+
+  // Gap between squares, clamped so each square keeps at least 1px
   function squareGap(gridSize) {
-    return Math.max(1, Math.round(gridSize * 0.15));
+    return Math.min(state.gap, gridSize - 1);
   }
 
   // One noise sample at the cell center drives the whole square
@@ -252,7 +278,7 @@
   // so the exported PNG composites cleanly over anything.
   function buildImage(targetCtx, transparent) {
     const noise = generateNoiseMap();
-    const { grid, bg } = COLORS[state.color];
+    const { grid, bg } = currentColors();
     const gridSize = state.gridSize;
     const opacity = state.opacity;
     const image = targetCtx.createImageData(W, H);
@@ -315,7 +341,7 @@
   // fully transparent runs are dropped. Background is transparent.
   function buildSVG() {
     const noise = generateNoiseMap();
-    const { grid } = COLORS[state.color];
+    const { grid } = currentColors();
     const gridSize = state.gridSize;
     const opacity = state.opacity;
     const parts = [];
@@ -387,11 +413,19 @@
     els.scaleValue.textContent = state.scale;
     els.intensityValue.textContent = state.intensity.toFixed(1);
     els.gridSizeValue.textContent = state.gridSize + "px";
+    els.gapValue.textContent = state.gap + "px";
     els.opacityValue.textContent = state.opacity.toFixed(2).replace(/0$/, "");
   }
 
   els.pattern.addEventListener("change", () => {
     state.pattern = els.pattern.value;
+    els.gapControl.classList.toggle("hidden", state.pattern !== "squares");
+    render();
+  });
+
+  els.gap.addEventListener("input", () => {
+    state.gap = Number(els.gap.value);
+    syncOutputs();
     render();
   });
 
@@ -428,9 +462,22 @@
     const button = e.target.closest(".swatch");
     if (!button) return;
     state.color = button.dataset.color;
+    state.customGrid = null;
+    els.hex.value = "";
+    els.hex.classList.remove("active");
     els.colorOptions.querySelectorAll(".swatch").forEach((s) => {
       s.classList.toggle("selected", s === button);
     });
+    render();
+  });
+
+  els.hex.addEventListener("input", () => {
+    const rgb = parseHex(els.hex.value);
+    els.hex.classList.toggle("active", rgb !== null);
+    if (!rgb) return; // wait until the value is a valid hex color
+    state.color = "custom";
+    state.customGrid = rgb;
+    els.colorOptions.querySelectorAll(".swatch").forEach((s) => s.classList.remove("selected"));
     render();
   });
 

@@ -105,6 +105,10 @@ button.primary:hover {
   gap: 20px;
 }
 
+.control.hidden {
+  display: none;
+}
+
 .control label {
   display: flex;
   justify-content: space-between;
@@ -185,6 +189,27 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .swatch.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.hex-input {
+  width: 100%;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.hex-input::placeholder {
+  color: var(--text-dim);
+}
+
+.hex-input.active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
