@@ -5,6 +5,7 @@
   const H = canvas.height;
 
   const els = {
+    pattern: document.getElementById("pattern"),
     algorithm: document.getElementById("algorithm"),
     scale: document.getElementById("scale"),
     scaleValue: document.getElementById("scale-value"),
@@ -27,6 +28,7 @@
   };
 
   const state = {
+    pattern: "lines",
     algorithm: "perlin",
     scale: 120,
     intensity: 1.5,
@@ -233,6 +235,18 @@
 
   // --- Grid rendering (pass 2) ---
 
+  // Gap between squares so adjacent cells read as a mosaic, not a solid wash
+  function squareGap(gridSize) {
+    return Math.max(1, Math.round(gridSize * 0.15));
+  }
+
+  // One noise sample at the cell center drives the whole square
+  function cellAlpha(noise, cx, cy, gridSize) {
+    const sx = Math.min(W - 1, cx + (gridSize >> 1));
+    const sy = Math.min(H - 1, cy + (gridSize >> 1));
+    return noise[sy * W + sx] * state.opacity;
+  }
+
   // Builds the texture as ImageData. With transparent=true the background is
   // left fully transparent and the noise mask goes into the alpha channel,
   // so the exported PNG composites cleanly over anything.
@@ -244,28 +258,47 @@
     const image = targetCtx.createImageData(W, H);
     const data = image.data;
 
-    for (let y = 0; y < H; y++) {
-      const onRow = y % gridSize === 0;
-      for (let x = 0; x < W; x++) {
-        const i = (y * W + x) * 4;
-        const onLine = onRow || x % gridSize === 0;
-        if (transparent) {
-          data[i] = grid[0];
-          data[i + 1] = grid[1];
-          data[i + 2] = grid[2];
-          data[i + 3] = onLine ? noise[y * W + x] * opacity * 255 : 0;
-        } else {
-          if (onLine) {
-            const a = noise[y * W + x] * opacity;
-            data[i] = bg[0] + (grid[0] - bg[0]) * a;
-            data[i + 1] = bg[1] + (grid[1] - bg[1]) * a;
-            data[i + 2] = bg[2] + (grid[2] - bg[2]) * a;
-          } else {
-            data[i] = bg[0];
-            data[i + 1] = bg[1];
-            data[i + 2] = bg[2];
+    if (!transparent) {
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = bg[0];
+        data[i + 1] = bg[1];
+        data[i + 2] = bg[2];
+        data[i + 3] = 255;
+      }
+    }
+
+    function plot(i, a) {
+      if (transparent) {
+        data[i] = grid[0];
+        data[i + 1] = grid[1];
+        data[i + 2] = grid[2];
+        data[i + 3] = a * 255;
+      } else {
+        data[i] = bg[0] + (grid[0] - bg[0]) * a;
+        data[i + 1] = bg[1] + (grid[1] - bg[1]) * a;
+        data[i + 2] = bg[2] + (grid[2] - bg[2]) * a;
+      }
+    }
+
+    if (state.pattern === "squares") {
+      const gap = squareGap(gridSize);
+      for (let cy = 0; cy < H; cy += gridSize) {
+        for (let cx = 0; cx < W; cx += gridSize) {
+          const a = cellAlpha(noise, cx, cy, gridSize);
+          const xEnd = Math.min(W, cx + gridSize - gap);
+          const yEnd = Math.min(H, cy + gridSize - gap);
+          for (let y = cy; y < yEnd; y++) {
+            for (let x = cx; x < xEnd; x++) plot((y * W + x) * 4, a);
           }
-          data[i + 3] = 255;
+        }
+      }
+    } else {
+      for (let y = 0; y < H; y++) {
+        const onRow = y % gridSize === 0;
+        for (let x = 0; x < W; x++) {
+          if (onRow || x % gridSize === 0) {
+            plot((y * W + x) * 4, noise[y * W + x] * opacity);
+          }
         }
       }
     }
@@ -298,31 +331,45 @@
       parts.push(`<rect ${rect} fill-opacity="${alpha}"/>`);
     }
 
-    // Horizontal grid lines
-    for (let y = 0; y < H; y += gridSize) {
-      let runStart = 0;
-      let runAlpha = -1;
-      for (let x = 0; x <= W; x++) {
-        const a = x < W ? alphaAt(x, y) : -1;
-        if (a !== runAlpha) {
-          flushRun(true, y, runStart, x, runAlpha);
-          runStart = x;
-          runAlpha = a;
+    if (state.pattern === "squares") {
+      // One rect per cell, opacity from the noise sample at its center
+      const gap = squareGap(gridSize);
+      for (let cy = 0; cy < H; cy += gridSize) {
+        for (let cx = 0; cx < W; cx += gridSize) {
+          const a = Math.round(cellAlpha(noise, cx, cy, gridSize) * 100) / 100;
+          if (a <= 0) continue;
+          const w = Math.min(gridSize - gap, W - cx);
+          const h = Math.min(gridSize - gap, H - cy);
+          parts.push(`<rect x="${cx}" y="${cy}" width="${w}" height="${h}" fill-opacity="${a}"/>`);
         }
       }
-    }
+    } else {
+      // Horizontal grid lines
+      for (let y = 0; y < H; y += gridSize) {
+        let runStart = 0;
+        let runAlpha = -1;
+        for (let x = 0; x <= W; x++) {
+          const a = x < W ? alphaAt(x, y) : -1;
+          if (a !== runAlpha) {
+            flushRun(true, y, runStart, x, runAlpha);
+            runStart = x;
+            runAlpha = a;
+          }
+        }
+      }
 
-    // Vertical grid lines, skipping pixels the horizontal pass already drew
-    for (let x = 0; x < W; x += gridSize) {
-      let runStart = 0;
-      let runAlpha = -1;
-      for (let y = 0; y <= H; y++) {
-        const onRow = y >= H || y % gridSize === 0;
-        const a = onRow ? -1 : alphaAt(x, y);
-        if (a !== runAlpha) {
-          flushRun(false, x, runStart, y, runAlpha);
-          runStart = y;
-          runAlpha = a;
+      // Vertical grid lines, skipping pixels the horizontal pass already drew
+      for (let x = 0; x < W; x += gridSize) {
+        let runStart = 0;
+        let runAlpha = -1;
+        for (let y = 0; y <= H; y++) {
+          const onRow = y >= H || y % gridSize === 0;
+          const a = onRow ? -1 : alphaAt(x, y);
+          if (a !== runAlpha) {
+            flushRun(false, x, runStart, y, runAlpha);
+            runStart = y;
+            runAlpha = a;
+          }
         }
       }
     }
@@ -342,6 +389,11 @@
     els.gridSizeValue.textContent = state.gridSize + "px";
     els.opacityValue.textContent = state.opacity.toFixed(2).replace(/0$/, "");
   }
+
+  els.pattern.addEventListener("change", () => {
+    state.pattern = els.pattern.value;
+    render();
+  });
 
   els.algorithm.addEventListener("change", () => {
     state.algorithm = els.algorithm.value;
