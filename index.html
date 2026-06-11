@@ -57,6 +57,11 @@
           <input type="range" id="grid-size" min="10" max="120" step="1" value="24" />
         </div>
 
+        <div class="control hidden" id="gap-control">
+          <label for="gap">Square gap <output id="gap-value">4px</output></label>
+          <input type="range" id="gap" min="0" max="30" step="1" value="4" />
+        </div>
+
         <div class="control">
           <label for="opacity">Grid opacity <output id="opacity-value">1.0</output></label>
           <input type="range" id="opacity" min="0" max="1" step="0.05" value="1" />
@@ -75,6 +80,7 @@
               <span style="background:#7da7ff"></span> Blue
             </button>
           </div>
+          <input type="text" id="hex" class="hex-input" placeholder="Custom hex, e.g. #ff6b35" spellcheck="false" />
         </div>
       </aside>
     </div>
