@@ -232,12 +232,15 @@
 
   // --- Grid rendering (pass 2) ---
 
-  function render() {
+  // Builds the texture as ImageData. With transparent=true the background is
+  // left fully transparent and the noise mask goes into the alpha channel,
+  // so the exported PNG composites cleanly over anything.
+  function buildImage(targetCtx, transparent) {
     const noise = generateNoiseMap();
     const { grid, bg } = COLORS[state.color];
     const gridSize = state.gridSize;
     const opacity = state.opacity;
-    const image = ctx.createImageData(W, H);
+    const image = targetCtx.createImageData(W, H);
     const data = image.data;
 
     for (let y = 0; y < H; y++) {
@@ -245,20 +248,31 @@
       for (let x = 0; x < W; x++) {
         const i = (y * W + x) * 4;
         const onLine = onRow || x % gridSize === 0;
-        if (onLine) {
-          const a = noise[y * W + x] * opacity;
-          data[i] = bg[0] + (grid[0] - bg[0]) * a;
-          data[i + 1] = bg[1] + (grid[1] - bg[1]) * a;
-          data[i + 2] = bg[2] + (grid[2] - bg[2]) * a;
+        if (transparent) {
+          data[i] = grid[0];
+          data[i + 1] = grid[1];
+          data[i + 2] = grid[2];
+          data[i + 3] = onLine ? noise[y * W + x] * opacity * 255 : 0;
         } else {
-          data[i] = bg[0];
-          data[i + 1] = bg[1];
-          data[i + 2] = bg[2];
+          if (onLine) {
+            const a = noise[y * W + x] * opacity;
+            data[i] = bg[0] + (grid[0] - bg[0]) * a;
+            data[i + 1] = bg[1] + (grid[1] - bg[1]) * a;
+            data[i + 2] = bg[2] + (grid[2] - bg[2]) * a;
+          } else {
+            data[i] = bg[0];
+            data[i + 1] = bg[1];
+            data[i + 2] = bg[2];
+          }
+          data[i + 3] = 255;
         }
-        data[i + 3] = 255;
       }
     }
-    ctx.putImageData(image, 0, 0);
+    return image;
+  }
+
+  function render() {
+    ctx.putImageData(buildImage(ctx, false), 0, 0);
   }
 
   // --- Controls ---
@@ -316,9 +330,14 @@
   });
 
   els.export.addEventListener("click", () => {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = W;
+    exportCanvas.height = H;
+    const exportCtx = exportCanvas.getContext("2d");
+    exportCtx.putImageData(buildImage(exportCtx, true), 0, 0);
     const link = document.createElement("a");
     link.download = "noise-grid-texture.png";
-    link.href = canvas.toDataURL("image/png");
+    link.href = exportCanvas.toDataURL("image/png");
     link.click();
   });
 
