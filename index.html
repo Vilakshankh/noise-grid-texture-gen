@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noise Grid Texture Generator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Noise Grid Texture Generator</h1>
+      <p>A grid pattern masked by a procedural noise field. Tune it, then export as PNG.</p>
+    </header>
+
+    <div class="layout">
+      <section class="canvas-panel">
+        <canvas id="canvas" width="680" height="400"></canvas>
+        <div class="canvas-actions">
+          <button id="regenerate" type="button">Regenerate seed</button>
+          <button id="export" type="button" class="primary">Export PNG</button>
+        </div>
+      </section>
+
+      <aside class="controls">
+        <div class="control">
+          <label for="algorithm">Noise algorithm</label>
+          <select id="algorithm">
+            <option value="perlin" selected>Perlin</option>
+            <option value="simplex">Simplex</option>
+            <option value="fbm">fBm (5 octaves)</option>
+            <option value="cellular">Cellular (Worley)</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label for="scale">Noise scale <output id="scale-value">120</output></label>
+          <input type="range" id="scale" min="10" max="300" step="1" value="120" />
+        </div>
+
+        <div class="control">
+          <label for="intensity">Noise intensity <output id="intensity-value">1.5</output></label>
+          <input type="range" id="intensity" min="0.2" max="4" step="0.1" value="1.5" />
+        </div>
+
+        <div class="control">
+          <label for="grid-size">Grid size <output id="grid-size-value">24px</output></label>
+          <input type="range" id="grid-size" min="10" max="120" step="1" value="24" />
+        </div>
+
+        <div class="control">
+          <label for="opacity">Grid opacity <output id="opacity-value">1.0</output></label>
+          <input type="range" id="opacity" min="0" max="1" step="0.05" value="1" />
+        </div>
+
+        <div class="control">
+          <label>Grid color</label>
+          <div class="color-options" id="color-options">
+            <button type="button" class="swatch selected" data-color="white" aria-label="White">
+              <span style="background:#f5f5f5"></span> White
+            </button>
+            <button type="button" class="swatch" data-color="black" aria-label="Black">
+              <span style="background:#111111"></span> Black
+            </button>
+            <button type="button" class="swatch" data-color="blue" aria-label="Blue">
+              <span style="background:#7da7ff"></span> Blue
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
