@@ -17,6 +17,7 @@
     colorOptions: document.getElementById("color-options"),
     regenerate: document.getElementById("regenerate"),
     export: document.getElementById("export"),
+    exportSvg: document.getElementById("export-svg"),
   };
 
   const COLORS = {
@@ -275,6 +276,64 @@
     ctx.putImageData(buildImage(ctx, false), 0, 0);
   }
 
+  // Builds the texture as an SVG string: grid lines become 1px rects whose
+  // fill-opacity carries the noise mask. Consecutive pixels with the same
+  // quantized alpha are merged into one rect to keep the file small, and
+  // fully transparent runs are dropped. Background is transparent.
+  function buildSVG() {
+    const noise = generateNoiseMap();
+    const { grid } = COLORS[state.color];
+    const gridSize = state.gridSize;
+    const opacity = state.opacity;
+    const parts = [];
+
+    // Alpha quantized to 1/100 so smooth noise produces mergeable runs
+    const alphaAt = (x, y) => Math.round(noise[y * W + x] * opacity * 100) / 100;
+
+    function flushRun(horizontal, line, start, end, alpha) {
+      if (alpha <= 0 || end <= start) return;
+      const rect = horizontal
+        ? `x="${start}" y="${line}" width="${end - start}" height="1"`
+        : `x="${line}" y="${start}" width="1" height="${end - start}"`;
+      parts.push(`<rect ${rect} fill-opacity="${alpha}"/>`);
+    }
+
+    // Horizontal grid lines
+    for (let y = 0; y < H; y += gridSize) {
+      let runStart = 0;
+      let runAlpha = -1;
+      for (let x = 0; x <= W; x++) {
+        const a = x < W ? alphaAt(x, y) : -1;
+        if (a !== runAlpha) {
+          flushRun(true, y, runStart, x, runAlpha);
+          runStart = x;
+          runAlpha = a;
+        }
+      }
+    }
+
+    // Vertical grid lines, skipping pixels the horizontal pass already drew
+    for (let x = 0; x < W; x += gridSize) {
+      let runStart = 0;
+      let runAlpha = -1;
+      for (let y = 0; y <= H; y++) {
+        const onRow = y >= H || y % gridSize === 0;
+        const a = onRow ? -1 : alphaAt(x, y);
+        if (a !== runAlpha) {
+          flushRun(false, x, runStart, y, runAlpha);
+          runStart = y;
+          runAlpha = a;
+        }
+      }
+    }
+
+    const color = `rgb(${grid[0]},${grid[1]},${grid[2]})`;
+    return (
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
+      `<g fill="${color}">${parts.join("")}</g></svg>`
+    );
+  }
+
   // --- Controls ---
 
   function syncOutputs() {
@@ -339,6 +398,16 @@
     link.download = "noise-grid-texture.png";
     link.href = exportCanvas.toDataURL("image/png");
     link.click();
+  });
+
+  els.exportSvg.addEventListener("click", () => {
+    const blob = new Blob([buildSVG()], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = "noise-grid-texture.svg";
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
   });
 
   // --- Init ---
