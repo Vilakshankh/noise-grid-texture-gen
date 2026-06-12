@@ -491,9 +491,7 @@
 
   els.algorithm.addEventListener("change", () => {
     state.algorithm = els.algorithm.value;
-    const isImage = state.algorithm === "image";
-    els.imageControl.classList.toggle("hidden", !isImage);
-    els.scaleControl.classList.toggle("hidden", isImage);
+    els.scaleControl.classList.toggle("hidden", state.algorithm === "image");
     render();
   });
 
@@ -505,6 +503,10 @@
     img.onload = () => {
       URL.revokeObjectURL(url);
       sourceImage = img;
+      // Importing a picture switches the map source to it right away
+      state.algorithm = "image";
+      els.algorithm.value = "image";
+      els.scaleControl.classList.add("hidden");
       applyCanvasSize();
       render();
     };
