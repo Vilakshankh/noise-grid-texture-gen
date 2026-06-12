@@ -1,12 +1,16 @@
 (() => {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-  const W = canvas.width;
-  const H = canvas.height;
+  let W = canvas.width;
+  let H = canvas.height;
 
   const els = {
     pattern: document.getElementById("pattern"),
     algorithm: document.getElementById("algorithm"),
+    imageFile: document.getElementById("image-file"),
+    imageControl: document.getElementById("image-control"),
+    canvasSize: document.getElementById("canvas-size"),
+    scaleControl: document.getElementById("scale-control"),
     scale: document.getElementById("scale"),
     scaleValue: document.getElementById("scale-value"),
     intensity: document.getElementById("intensity"),
@@ -41,8 +45,32 @@
     opacity: 1,
     color: "white",
     customGrid: null,
+    canvasSize: "680x400",
     seed: Math.floor(Math.random() * 0xffffffff),
   };
+
+  // Grayscale luminance map of the uploaded picture, canvas-sized
+  let imageMap = null;
+  // The uploaded picture itself, kept for re-rasterizing on canvas resize
+  let sourceImage = null;
+
+  // Resizes the canvas per the size setting; "original" follows the
+  // uploaded image's native dimensions (default size until one is loaded)
+  function applyCanvasSize() {
+    let w = 680;
+    let h = 400;
+    if (state.canvasSize === "original") {
+      if (sourceImage) {
+        w = sourceImage.width;
+        h = sourceImage.height;
+      }
+    } else {
+      [w, h] = state.canvasSize.split("x").map(Number);
+    }
+    W = canvas.width = w;
+    H = canvas.height = h;
+    if (sourceImage) imageMap = rasterizeImage(sourceImage);
+  }
 
   // --- Seeded RNG (mulberry32) ---
 
@@ -228,6 +256,10 @@
           case "cellular":
             v = worley(nx * 4, ny * 4, state.seed);
             break;
+          case "image":
+            // Uniform midtone until a picture is uploaded
+            v = imageMap ? imageMap[y * W + x] : 0.5;
+            break;
           default:
             v = (perlin(nx, ny) + 1) / 2;
         }
@@ -266,11 +298,21 @@
     return Math.min(state.gap, gridSize - 1);
   }
 
-  // One noise sample at the cell center drives the whole square
+  // The map averaged over the cell drives the whole square. Averaging
+  // (rather than a center sample) downsamples photo detail cleanly and is
+  // indistinguishable from a center sample on smooth noise.
   function cellAlpha(noise, cx, cy, gridSize) {
-    const sx = Math.min(W - 1, cx + (gridSize >> 1));
-    const sy = Math.min(H - 1, cy + (gridSize >> 1));
-    return noise[sy * W + sx] * state.opacity;
+    const xEnd = Math.min(W, cx + gridSize);
+    const yEnd = Math.min(H, cy + gridSize);
+    let sum = 0;
+    let count = 0;
+    for (let y = cy; y < yEnd; y++) {
+      for (let x = cx; x < xEnd; x++) {
+        sum += noise[y * W + x];
+        count++;
+      }
+    }
+    return (sum / count) * state.opacity;
   }
 
   // Builds the texture as ImageData. With transparent=true the background is
@@ -429,8 +471,49 @@
     render();
   });
 
+  // Cover-fits the picture to the canvas and reduces it to luminance
+  function rasterizeImage(img) {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    const cctx = c.getContext("2d");
+    const s = Math.max(W / img.width, H / img.height);
+    const dw = img.width * s;
+    const dh = img.height * s;
+    cctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    const d = cctx.getImageData(0, 0, W, H).data;
+    const map = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      map[i] = (0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2]) / 255;
+    }
+    return map;
+  }
+
   els.algorithm.addEventListener("change", () => {
     state.algorithm = els.algorithm.value;
+    const isImage = state.algorithm === "image";
+    els.imageControl.classList.toggle("hidden", !isImage);
+    els.scaleControl.classList.toggle("hidden", isImage);
+    render();
+  });
+
+  els.imageFile.addEventListener("change", () => {
+    const file = els.imageFile.files && els.imageFile.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      sourceImage = img;
+      applyCanvasSize();
+      render();
+    };
+    img.src = url;
+  });
+
+  els.canvasSize.addEventListener("change", () => {
+    state.canvasSize = els.canvasSize.value;
+    applyCanvasSize();
     render();
   });
 
