@@ -33,18 +33,18 @@
         </div>
 
         <div class="control">
-          <label for="algorithm">Noise algorithm</label>
+          <label for="algorithm">Map source</label>
           <select id="algorithm">
-            <option value="perlin" selected>Perlin</option>
-            <option value="simplex">Simplex</option>
+            <option value="perlin" selected>Perlin noise</option>
+            <option value="simplex">Simplex noise</option>
             <option value="fbm">fBm (5 octaves)</option>
             <option value="cellular">Cellular (Worley)</option>
-            <option value="image">Image map</option>
+            <option value="image">Image (upload below)</option>
           </select>
         </div>
 
-        <div class="control hidden" id="image-control">
-          <label for="image-file">Map image</label>
+        <div class="control" id="image-control">
+          <label for="image-file">Import image</label>
           <input type="file" id="image-file" accept="image/*" />
         </div>
 
