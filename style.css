@@ -165,6 +165,24 @@ input[type="range"]::-moz-range-thumb {
   border: none;
 }
 
+input[type="file"] {
+  width: 100%;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+input[type="file"]::file-selector-button {
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
 .color-options {
   display: flex;
   gap: 8px;
