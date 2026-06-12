@@ -51,13 +51,33 @@ body {
   flex: 0 0 auto;
 }
 
-#canvas {
-  display: block;
+/* Fixed-size frame: the page layout never follows the render resolution */
+.canvas-viewport {
+  width: 680px;
   max-width: 100%;
-  height: auto;
+  height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
   border: 1px solid var(--panel-border);
   background: #0a0a0a;
+  overflow: hidden;
+}
+
+#canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.canvas-dimensions {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
 }
 
 .canvas-actions {
