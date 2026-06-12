@@ -15,7 +15,10 @@
 
     <div class="layout">
       <section class="canvas-panel">
-        <canvas id="canvas" width="680" height="400"></canvas>
+        <div class="canvas-viewport">
+          <canvas id="canvas" width="680" height="400"></canvas>
+        </div>
+        <p class="canvas-dimensions" id="canvas-dimensions">680 x 400</p>
         <div class="canvas-actions">
           <button id="regenerate" type="button">Regenerate seed</button>
           <button id="export-svg" type="button">Export SVG</button>

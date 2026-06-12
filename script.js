@@ -10,6 +10,7 @@
     imageFile: document.getElementById("image-file"),
     imageControl: document.getElementById("image-control"),
     canvasSize: document.getElementById("canvas-size"),
+    canvasDimensions: document.getElementById("canvas-dimensions"),
     scaleControl: document.getElementById("scale-control"),
     scale: document.getElementById("scale"),
     scaleValue: document.getElementById("scale-value"),
@@ -69,6 +70,7 @@
     }
     W = canvas.width = w;
     H = canvas.height = h;
+    els.canvasDimensions.textContent = `${W} x ${H}`;
     if (sourceImage) imageMap = rasterizeImage(sourceImage);
   }
 
