@@ -1,14 +1,15 @@
 (() => {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
-  const W = canvas.width;
-  const H = canvas.height;
+  let W = canvas.width;
+  let H = canvas.height;
 
   const els = {
     pattern: document.getElementById("pattern"),
     algorithm: document.getElementById("algorithm"),
     imageFile: document.getElementById("image-file"),
     imageControl: document.getElementById("image-control"),
+    canvasSize: document.getElementById("canvas-size"),
     scaleControl: document.getElementById("scale-control"),
     scale: document.getElementById("scale"),
     scaleValue: document.getElementById("scale-value"),
@@ -44,11 +45,32 @@
     opacity: 1,
     color: "white",
     customGrid: null,
+    canvasSize: "680x400",
     seed: Math.floor(Math.random() * 0xffffffff),
   };
 
   // Grayscale luminance map of the uploaded picture, canvas-sized
   let imageMap = null;
+  // The uploaded picture itself, kept for re-rasterizing on canvas resize
+  let sourceImage = null;
+
+  // Resizes the canvas per the size setting; "original" follows the
+  // uploaded image's native dimensions (default size until one is loaded)
+  function applyCanvasSize() {
+    let w = 680;
+    let h = 400;
+    if (state.canvasSize === "original") {
+      if (sourceImage) {
+        w = sourceImage.width;
+        h = sourceImage.height;
+      }
+    } else {
+      [w, h] = state.canvasSize.split("x").map(Number);
+    }
+    W = canvas.width = w;
+    H = canvas.height = h;
+    if (sourceImage) imageMap = rasterizeImage(sourceImage);
+  }
 
   // --- Seeded RNG (mulberry32) ---
 
@@ -482,10 +504,17 @@
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      imageMap = rasterizeImage(img);
+      sourceImage = img;
+      applyCanvasSize();
       render();
     };
     img.src = url;
+  });
+
+  els.canvasSize.addEventListener("change", () => {
+    state.canvasSize = els.canvasSize.value;
+    applyCanvasSize();
+    render();
   });
 
   els.scale.addEventListener("input", () => {

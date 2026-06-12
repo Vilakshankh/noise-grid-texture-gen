@@ -48,6 +48,17 @@
           <input type="file" id="image-file" accept="image/*" />
         </div>
 
+        <div class="control">
+          <label for="canvas-size">Canvas size</label>
+          <select id="canvas-size">
+            <option value="680x400" selected>Landscape 680x400</option>
+            <option value="1280x720">Wide 1280x720 (16:9)</option>
+            <option value="600x600">Square 600x600</option>
+            <option value="400x680">Portrait 400x680</option>
+            <option value="original">Original image size</option>
+          </select>
+        </div>
+
         <div class="control" id="scale-control">
           <label for="scale">Noise scale <output id="scale-value">120</output></label>
           <input type="range" id="scale" min="10" max="300" step="1" value="120" />
