@@ -59,7 +59,17 @@
             <option value="600x600">Square 600x600</option>
             <option value="400x680">Portrait 400x680</option>
             <option value="original">Original image size</option>
+            <option value="custom">Custom...</option>
           </select>
+        </div>
+
+        <div class="control hidden" id="custom-size-control">
+          <label>Custom dimensions</label>
+          <div class="dimension-inputs">
+            <input type="number" id="custom-width" min="16" max="4000" step="1" value="680" aria-label="Width" />
+            <span class="dimension-x">x</span>
+            <input type="number" id="custom-height" min="16" max="4000" step="1" value="400" aria-label="Height" />
+          </div>
         </div>
 
         <div class="control" id="scale-control">
