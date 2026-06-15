@@ -11,6 +11,9 @@
     imageControl: document.getElementById("image-control"),
     canvasSize: document.getElementById("canvas-size"),
     canvasDimensions: document.getElementById("canvas-dimensions"),
+    customSizeControl: document.getElementById("custom-size-control"),
+    customWidth: document.getElementById("custom-width"),
+    customHeight: document.getElementById("custom-height"),
     scaleControl: document.getElementById("scale-control"),
     scale: document.getElementById("scale"),
     scaleValue: document.getElementById("scale-value"),
@@ -47,7 +50,19 @@
     color: "white",
     customGrid: null,
     canvasSize: "680x400",
+    customWidth: 680,
+    customHeight: 400,
     seed: Math.floor(Math.random() * 0xffffffff),
+  };
+
+  // Render dimensions are clamped to this range to keep per-pixel work sane
+  const MIN_DIM = 16;
+  const MAX_DIM = 4000;
+  const clampDim = (v, fallback) => {
+    const s = String(v).trim();
+    if (s === "") return fallback; // empty field while typing keeps the last value
+    const n = Math.round(Number(s));
+    return Number.isFinite(n) && n > 0 ? Math.max(MIN_DIM, Math.min(MAX_DIM, n)) : fallback;
   };
 
   // Grayscale luminance map of the uploaded picture, canvas-sized
@@ -65,6 +80,9 @@
         w = sourceImage.width;
         h = sourceImage.height;
       }
+    } else if (state.canvasSize === "custom") {
+      w = state.customWidth;
+      h = state.customHeight;
     } else {
       [w, h] = state.canvasSize.split("x").map(Number);
     }
@@ -517,8 +535,28 @@
 
   els.canvasSize.addEventListener("change", () => {
     state.canvasSize = els.canvasSize.value;
+    els.customSizeControl.classList.toggle("hidden", state.canvasSize !== "custom");
     applyCanvasSize();
     render();
+  });
+
+  function applyCustomDimensions() {
+    state.customWidth = clampDim(els.customWidth.value, state.customWidth);
+    state.customHeight = clampDim(els.customHeight.value, state.customHeight);
+    if (state.canvasSize === "custom") {
+      applyCanvasSize();
+      render();
+    }
+  }
+
+  // Update live while typing, then snap the field to the clamped value on blur
+  els.customWidth.addEventListener("input", applyCustomDimensions);
+  els.customHeight.addEventListener("input", applyCustomDimensions);
+  els.customWidth.addEventListener("change", () => {
+    els.customWidth.value = state.customWidth;
+  });
+  els.customHeight.addEventListener("change", () => {
+    els.customHeight.value = state.customHeight;
   });
 
   els.scale.addEventListener("input", () => {
