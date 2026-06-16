@@ -19,7 +19,7 @@
 
     <div class="layout">
       <section class="canvas-panel">
-        <div class="canvas-viewport">
+        <div class="canvas-viewport" id="canvas-viewport">
           <canvas id="canvas" width="680" height="400" hidden></canvas>
           <p class="canvas-empty" id="empty-state">Import an image to begin.</p>
         </div>
@@ -51,6 +51,13 @@
           <label class="toggle">
             <input type="checkbox" id="invert" />
             Invert mask
+          </label>
+        </div>
+
+        <div class="control">
+          <label class="toggle">
+            <input type="checkbox" id="transparent" />
+            Transparent background
           </label>
         </div>
       </aside>

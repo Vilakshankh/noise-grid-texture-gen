@@ -303,6 +303,18 @@ input[type="file"]::file-selector-button {
 }
 
 /* Threshold tool */
+/* Checkerboard shows through transparent mask areas in the preview */
+.canvas-viewport.transparent {
+  background-color: #0a0a0a;
+  background-image:
+    linear-gradient(45deg, #1c2026 25%, transparent 25%),
+    linear-gradient(-45deg, #1c2026 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1c2026 75%),
+    linear-gradient(-45deg, transparent 75%, #1c2026 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
 .canvas-empty {
   color: var(--text-dim);
   font-size: 13px;
