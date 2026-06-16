@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Threshold Mask</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <nav class="tool-nav">
+      <a href="index.html">Texture Generator</a>
+      <a href="threshold.html" class="active">Threshold Mask</a>
+    </nav>
+    <header class="app-header">
+      <h1>Threshold Mask</h1>
+      <p>Import an image and turn it into a black-and-white binary mask. Set the cutoff by hand or let Auto pick it.</p>
+    </header>
+
+    <div class="layout">
+      <section class="canvas-panel">
+        <div class="canvas-viewport">
+          <canvas id="canvas" width="680" height="400" hidden></canvas>
+          <p class="canvas-empty" id="empty-state">Import an image to begin.</p>
+        </div>
+        <p class="canvas-dimensions" id="canvas-dimensions">No image</p>
+        <div class="canvas-actions">
+          <button id="export" type="button" class="primary" disabled>Export PNG</button>
+        </div>
+      </section>
+
+      <aside class="controls">
+        <div class="control">
+          <label for="image-file">Import image</label>
+          <input type="file" id="image-file" accept="image/*" />
+        </div>
+
+        <div class="control">
+          <label for="threshold">Threshold <output id="threshold-value">128</output></label>
+          <input type="range" id="threshold" min="0" max="255" step="1" value="128" disabled />
+          <canvas class="histogram" id="histogram" width="256" height="56"></canvas>
+        </div>
+
+        <div class="control">
+          <div class="threshold-row">
+            <button id="auto" type="button" disabled>Auto (Otsu)</button>
+          </div>
+        </div>
+
+        <div class="control">
+          <label class="toggle">
+            <input type="checkbox" id="invert" />
+            Invert mask
+          </label>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="threshold.js"></script>
+</body>
+</html>
