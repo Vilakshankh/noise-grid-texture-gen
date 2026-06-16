@@ -27,6 +27,33 @@ body {
   max-width: 1020px;
 }
 
+.tool-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 26px;
+}
+
+.tool-nav a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.tool-nav a:hover {
+  color: var(--text);
+}
+
+.tool-nav a.active {
+  color: var(--text);
+  background: var(--panel);
+  border-color: var(--panel-border);
+}
+
 .app-header h1 {
   margin: 0 0 6px;
   font-size: 22px;
@@ -273,4 +300,47 @@ input[type="file"]::file-selector-button {
 .hex-input.active {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Threshold tool */
+.canvas-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  padding: 0 24px;
+}
+
+.histogram {
+  display: block;
+  width: 100%;
+  height: 56px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+}
+
+.threshold-row {
+  display: flex;
+  gap: 10px;
+}
+
+.threshold-row button {
+  flex: 0 0 auto;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
