@@ -10,9 +10,11 @@
     thresholdValue: document.getElementById("threshold-value"),
     auto: document.getElementById("auto"),
     invert: document.getElementById("invert"),
+    transparent: document.getElementById("transparent"),
     export: document.getElementById("export"),
     emptyState: document.getElementById("empty-state"),
     dimensions: document.getElementById("canvas-dimensions"),
+    viewport: document.getElementById("canvas-viewport"),
   };
 
   // Cap the working resolution so per-pixel thresholding stays responsive
@@ -21,6 +23,7 @@
   const state = {
     threshold: 128,
     invert: false,
+    transparent: false,
   };
 
   let W = 0;
@@ -105,6 +108,7 @@
     const image = ctx.createImageData(W, H);
     const data = image.data;
     const t = state.threshold;
+    const transparent = state.transparent;
     for (let i = 0; i < W * H; i++) {
       // Pixels at or above the threshold are foreground (white) by default
       let on = gray[i] >= t;
@@ -113,7 +117,8 @@
       data[i * 4] = c;
       data[i * 4 + 1] = c;
       data[i * 4 + 2] = c;
-      data[i * 4 + 3] = 255;
+      // As an alpha matte: foreground opaque white, background fully transparent
+      data[i * 4 + 3] = transparent ? (on ? 255 : 0) : 255;
     }
     ctx.putImageData(image, 0, 0);
   }
@@ -178,6 +183,12 @@
 
   els.invert.addEventListener("change", () => {
     state.invert = els.invert.checked;
+    renderMask();
+  });
+
+  els.transparent.addEventListener("change", () => {
+    state.transparent = els.transparent.checked;
+    els.viewport.classList.toggle("transparent", state.transparent);
     renderMask();
   });
 
